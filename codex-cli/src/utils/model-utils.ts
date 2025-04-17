@@ -1,4 +1,4 @@
-import { OPENAI_API_KEY } from "./config";
+import { OPENAI_API_KEY, JULEP_BASE_URL, RESPONSES_API_KEY } from "./config";
 import OpenAI from "openai";
 
 const MODEL_LIST_TIMEOUT_MS = 2_000; // 2 seconds
@@ -16,23 +16,31 @@ let modelsPromise: Promise<Array<string>> | null = null;
 
 async function fetchModels(): Promise<Array<string>> {
   // If the user has not configured an API key we cannot hit the network.
-  if (!OPENAI_API_KEY) {
+  if (!RESPONSES_API_KEY) {
     return RECOMMENDED_MODELS;
   }
 
   try {
-    const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-    const list = await openai.models.list();
-
-    const models: Array<string> = [];
-    for await (const model of list as AsyncIterable<{ id?: string }>) {
-      if (model && typeof model.id === "string") {
-        models.push(model.id);
+    const openai = new OpenAI({ 
+      apiKey: RESPONSES_API_KEY,
+      baseURL: JULEP_BASE_URL
+    });
+    
+    try {
+      const list = await openai.models.list();
+      const models: Array<string> = [];
+      for await (const model of list as AsyncIterable<{ id?: string }>) {
+        if (model && typeof model.id === "string") {
+          models.push(model.id);
+        }
       }
+      return models.sort();
+    } catch (modelError) {
+      // If the /models endpoint fails (404), fall back to recommended models
+      console.log("Note: Could not fetch models from Julep server, using recommended models instead");
+      return RECOMMENDED_MODELS;
     }
-
-    return models.sort();
-  } catch {
+  } catch (error) {
     return [];
   }
 }

@@ -21,6 +21,7 @@ import {
 import { handleExecCommand } from "./handle-exec-command.js";
 import { randomUUID } from "node:crypto";
 import OpenAI, { APIConnectionTimeoutError } from "openai";
+import { JULEP_BASE_URL, RESPONSES_API_KEY } from "../config";
 
 // Wait time before retrying after rate limit errors (ms).
 const RATE_LIMIT_RETRY_WAIT_MS = parseInt(
@@ -235,7 +236,8 @@ export class AgentLoop {
     this.sessionId = getSessionId() || randomUUID().replaceAll("-", "");
     // Configure OpenAI client with optional timeout (ms) from environment
     const timeoutMs = OPENAI_TIMEOUT_MS;
-    const apiKey = this.config.apiKey ?? process.env["OPENAI_API_KEY"] ?? "";
+    // Always use the Julep-specific key for this client instance
+    const julepApiKey = RESPONSES_API_KEY ?? "";
     this.oai = new OpenAI({
       // The OpenAI JS SDK only requires `apiKey` when making requests against
       // the official API.  When running unit‑tests we stub out all network
@@ -243,12 +245,13 @@ export class AgentLoop {
       // the property if we actually have a value to avoid triggering runtime
       // errors inside the SDK (it validates that `apiKey` is a non‑empty
       // string when the field is present).
-      ...(apiKey ? { apiKey } : {}),
-      baseURL: OPENAI_BASE_URL,
+      apiKey: julepApiKey,  // Always use the Julep API key for Julep
+      baseURL: JULEP_BASE_URL,
       defaultHeaders: {
         originator: ORIGIN,
         version: CLI_VERSION,
         session_id: this.sessionId,
+        Authorization: `Bearer ${julepApiKey}`,  // Use Julep key for Authorization header
       },
       ...(timeoutMs !== undefined ? { timeout: timeoutMs } : {}),
     });
@@ -484,15 +487,7 @@ export class AgentLoop {
         const MAX_RETRIES = 5;
         for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
           try {
-            let reasoning: Reasoning | undefined;
-            if (this.model.startsWith("o")) {
-              reasoning = { effort: "high" };
-              if (this.model === "o3" || this.model === "o4-mini") {
-                // @ts-expect-error waiting for API type update
-                reasoning.summary = "auto";
-              }
-            }
-            const mergedInstructions = [prefix, this.instructions]
+            const mergedInstructions = [this.instructions]
               .filter(Boolean)
               .join("\n");
             if (isLoggingEnabled()) {
@@ -506,34 +501,8 @@ export class AgentLoop {
               instructions: mergedInstructions,
               previous_response_id: lastResponseId || undefined,
               input: turnInput,
-              stream: true,
+              stream: false,
               parallel_tool_calls: false,
-              reasoning,
-              tools: [
-                {
-                  type: "function",
-                  name: "shell",
-                  description: "Runs a shell command, and returns its output.",
-                  strict: false,
-                  parameters: {
-                    type: "object",
-                    properties: {
-                      command: { type: "array", items: { type: "string" } },
-                      workdir: {
-                        type: "string",
-                        description: "The working directory for the command.",
-                      },
-                      timeout: {
-                        type: "number",
-                        description:
-                          "The maximum time to wait for the command to complete in milliseconds.",
-                      },
-                    },
-                    required: ["command"],
-                    additionalProperties: false,
-                  },
-                },
-              ],
             });
             break;
           } catch (error) {
@@ -723,55 +692,25 @@ export class AgentLoop {
         }
 
         try {
-          // eslint-disable-next-line no-await-in-loop
-          for await (const event of stream) {
-            if (isLoggingEnabled()) {
-              log(`AgentLoop.run(): response event ${event.type}`);
-            }
+          this.currentStream = null;
 
-            // process and surface each item (no‑op until we can depend on streaming events)
-            if (event.type === "response.output_item.done") {
-              const item = event.item;
-              // 1) if it's a reasoning item, annotate it
-              type ReasoningItem = { type?: string; duration_ms?: number };
-              const maybeReasoning = item as ReasoningItem;
-              if (maybeReasoning.type === "reasoning") {
-                maybeReasoning.duration_ms = Date.now() - thinkingStart;
-              }
-              if (item.type === "function_call") {
-                // Track outstanding tool call so we can abort later if needed.
-                // The item comes from the streaming response, therefore it has
-                // either `id` (chat) or `call_id` (responses) – we normalise
-                // by reading both.
-                const callId =
-                  (item as { call_id?: string; id?: string }).call_id ??
-                  (item as { id?: string }).id;
-                if (callId) {
-                  this.pendingAborts.add(callId);
-                }
-              } else {
-                stageItem(item as ResponseItem);
-              }
-            }
-
-            if (event.type === "response.completed") {
-              if (thisGeneration === this.generation && !this.canceled) {
-                for (const item of event.response.output) {
-                  stageItem(item as ResponseItem);
-                }
-              }
-              if (event.response.status === "completed") {
-                // TODO: remove this once we can depend on streaming events
-                const newTurnInput = await this.processEventsWithoutStreaming(
-                  event.response.output,
-                  stageItem,
-                );
-                turnInput = newTurnInput;
-              }
-              lastResponseId = event.response.id;
-              this.onLastResponseId(event.response.id);
+          // Handle non-streaming response
+          // Cast to the correct OpenAI Response type
+          const response = stream as OpenAI.Responses.Response;
+          if (thisGeneration === this.generation && !this.canceled) {
+            for (const item of response.output) {
+              stageItem(item as ResponseItem);
             }
           }
+          if (response.status === "completed") {
+            const newTurnInput = await this.processEventsWithoutStreaming(
+              response.output,
+              stageItem,
+            );
+            turnInput = newTurnInput;
+          }
+          lastResponseId = response.id;
+          this.onLastResponseId(response.id);
         } catch (err: unknown) {
           // Gracefully handle an abort triggered via `cancel()` so that the
           // consumer does not see an unhandled exception.

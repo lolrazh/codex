@@ -36,6 +36,10 @@ export const OPENAI_TIMEOUT_MS =
 export const OPENAI_BASE_URL = process.env["OPENAI_BASE_URL"] || "";
 export let OPENAI_API_KEY = process.env["OPENAI_API_KEY"] || "";
 
+// Julep Open Responses API configuration
+export const JULEP_BASE_URL = process.env["JULEP_BASE_URL"] || "http://localhost:8080/";
+export const RESPONSES_API_KEY = process.env["RESPONSES_API_KEY"] || "";
+
 export function setApiKey(apiKey: string): void {
   OPENAI_API_KEY = apiKey;
 }
@@ -56,7 +60,7 @@ export type StoredConfig = {
 // propagating to existing users until they explicitly set a model.
 export const EMPTY_STORED_CONFIG: StoredConfig = { model: "" };
 
-// Pre‑stringified JSON variant so we don’t stringify repeatedly.
+// Pre‑stringified JSON variant so we don't stringify repeatedly.
 const EMPTY_CONFIG_JSON = JSON.stringify(EMPTY_STORED_CONFIG, null, 2) + "\n";
 
 export type MemoryConfig = {

@@ -5,7 +5,7 @@ import type { FileOperation } from "../utils/singlepass/file_ops";
 
 import Spinner from "./vendor/ink-spinner"; // Third‑party / vendor components
 import TextInput from "./vendor/ink-text-input";
-import { OPENAI_TIMEOUT_MS, OPENAI_BASE_URL } from "../utils/config";
+import { OPENAI_TIMEOUT_MS, OPENAI_BASE_URL, JULEP_BASE_URL, RESPONSES_API_KEY } from "../utils/config";
 import {
   generateDiffSummary,
   generateEditSummary,
@@ -394,8 +394,8 @@ export function SinglePassApp({
       });
 
       const openai = new OpenAI({
-        apiKey: config.apiKey ?? "",
-        baseURL: OPENAI_BASE_URL || undefined,
+        apiKey: config.apiKey ?? RESPONSES_API_KEY ?? "",
+        baseURL: JULEP_BASE_URL,
         timeout: OPENAI_TIMEOUT_MS,
       });
       const chatResp = await openai.beta.chat.completions.parse({

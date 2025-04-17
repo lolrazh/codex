@@ -55,3 +55,6 @@ Thumbs.db
 Icon?
 .Spotlight-V100/
 
+
+# Environment variables
+.env

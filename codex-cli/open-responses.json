@@ -1,0 +1,27 @@
+{
+  "version": "0.1.6",
+  "createdAt": "2025-04-17T18:17:11+05:30",
+  "updatedAt": "2025-04-17T18:17:11+05:30",
+  "created_at": "2025-04-17T18:17:11+05:30",
+  "updated_at": "2025-04-17T18:17:11+05:30",
+  "host": "127.0.0.1",
+  "port": "8080",
+  "docker_tag": "responses-latest",
+  "base_compose_uri": "default",
+  "env_file": "D:\\Projects\\2025\\hf-codex\\.env",
+  "api_version": "0.0.1",
+  "environment": {
+    "BRAVE_API_KEY": "",
+    "LOG_LEVEL": "info",
+    "MAX_PAYLOAD_SIZE": "10mb",
+    "MEMORY_STORE_PASSWORD": "61abf9ad260433b79644d7e4",
+    "NODE_ENV": "production",
+    "OPENAI_API_KEY": "",
+    "RATE_LIMIT_MAX": "100",
+    "RATE_LIMIT_WINDOW": "60000",
+    "REQUEST_TIMEOUT": "120000",
+    "RESPONSES_API_KEY": "resp_4ed0422e125173e1e9d7d0c1e74be141a8c11d0940065c94",
+    "RESPONSES_API_PORT": "8080",
+    "UNSTRUCTURED_API_KEY": ""
+  }
+}
