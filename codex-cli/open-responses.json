@@ -8,7 +8,7 @@
   "port": "8080",
   "docker_tag": "responses-latest",
   "base_compose_uri": "default",
-  "env_file": "D:\\Projects\\2025\\hf-codex\\.env",
+  "env_file": "D:\\Projects\\2025\\codex\\.env",
   "api_version": "0.0.1",
   "environment": {
     "BRAVE_API_KEY": "",
