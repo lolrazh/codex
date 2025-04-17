@@ -14,7 +14,6 @@ For the original documentation, features, and goals of the Codex CLI project, pl
 ### Prerequisites
 
 - **Node.js:** Version 22 or newer (as required by the original `codex-cli`).
-- **Python:** Required for the Open Responses CLI.
 - **API Keys:** You'll need API keys for the language model providers you intend to use (e.g., OpenAI, Anthropic, Groq).
 
 ### Setup
@@ -22,30 +21,27 @@ For the original documentation, features, and goals of the Codex CLI project, pl
 1.  **Install Open Responses CLI:**
     Follow the instructions at the [Open Responses Quickstart](https://docs.julep.ai/responses/quickstart#cli-installation) to install the CLI tool. Typically:
     ```bash
-    pip install open-responses
+    npx open-responses
     ```
 
 2.  **Configure API Keys:**
     Set the necessary API keys as environment variables for the providers you want to use. The Open Responses server will pick these up. Refer to the Open Responses documentation for the specific environment variable names (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`).
     ```bash
-    # Example for bash/zsh
-    export OPENAI_API_KEY="your-openai-key"
-    export ANTHROPIC_API_KEY="your-anthropic-key"
-    # Add others as needed
+    npx open-responses setup
     ```
 
 3.  **Run the Open Responses Server:**
     Start the local Open Responses server. It acts as a proxy to the different model providers.
     ```bash
-    open-responses server
+    npx open-responses start
     ```
     Keep this server running in a separate terminal.
 
 4.  **Clone and Build this Fork:**
     Clone this repository and build the `codex-cli` package:
     ```bash
-    git clone <your-fork-repo-url>
-    cd <your-fork-repo-name>/codex-cli
+    git clone https://github.com/lolrazh/codex.git
+    cd codex/codex-cli
     npm install
     npm run build
     ```
@@ -53,14 +49,9 @@ For the original documentation, features, and goals of the Codex CLI project, pl
 5.  **Run the CLI:**
     Execute the CLI using `node`, specifying the model via the `-m` flag using the `<provider>/<model>` format recognized by your Open Responses server.
     ```bash
-    # Example using an OpenAI model via Open Responses
-    node dist/cli.js -m openai/gpt-4o "Explain this codebase to me"
-
-    # Example using an Anthropic model via Open Responses
-    node dist/cli.js -m anthropic/claude-3-opus-20240229 "Refactor this function"
+    # Example using an Groq model via Open Responses
+    node dist/cli.js -m groq/gemm2-9b-it
     ```
-
-    The `codex` command should now interact with the model specified through your local Open Responses server.
 
 ---
 
