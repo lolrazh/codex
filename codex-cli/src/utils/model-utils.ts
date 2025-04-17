@@ -36,11 +36,14 @@ async function fetchModels(): Promise<Array<string>> {
       }
       return models.sort();
     } catch (modelError) {
-      // If the /models endpoint fails (404), fall back to recommended models
-      console.log("Note: Could not fetch models from Julep server, using recommended models instead");
-      return RECOMMENDED_MODELS;
+      // If the /models endpoint fails (404) on Julep, return [] instead of recommended.
+      console.log(
+        "Note: Could not fetch models from Julep server, proceeding without client-side list.",
+      );
+      return []; // Return empty list for Julep failure
     }
   } catch (error) {
+    // General error (e.g., network issues before trying /models)
     return [];
   }
 }
@@ -67,7 +70,18 @@ export async function getAvailableModels(): Promise<Array<string>> {
  */
 export async function isModelSupportedForResponses(
   model: string | undefined | null,
+  julepBaseUrl?: string | null,
 ): Promise<boolean> {
+  // If Julep is configured (passed explicitly), skip client-side validation.
+  if (julepBaseUrl) {
+    return true;
+  }
+
+  // If Julep is configured (globally), skip client-side validation and let the server handle it.
+  if (JULEP_BASE_URL) {
+    return true;
+  }
+
   if (
     typeof model !== "string" ||
     model.trim() === "" ||

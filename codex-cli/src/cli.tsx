@@ -21,6 +21,7 @@ import {
   loadConfig,
   PRETTY_PRINT,
   INSTRUCTIONS_FILEPATH,
+  JULEP_BASE_URL,
 } from "./utils/config";
 import { createInputItem } from "./utils/input-utils";
 import {
@@ -237,7 +238,8 @@ config = {
   model: model ?? config.model,
 };
 
-if (!(await isModelSupportedForResponses(config.model))) {
+// Pass JULEP_BASE_URL explicitly to the validation function
+if (!(await isModelSupportedForResponses(config.model, JULEP_BASE_URL))) {
   // eslint-disable-next-line no-console
   console.error(
     `The model "${config.model}" does not appear in the list of models ` +
@@ -323,7 +325,10 @@ const approvalPolicy: ApprovalPolicy =
     ? AutoApprovalMode.AUTO_EDIT
     : AutoApprovalMode.SUGGEST;
 
-preloadModels();
+// Only preload models if not using a custom Julep URL
+if (!JULEP_BASE_URL) {
+  preloadModels();
+}
 
 const instance = render(
   <App
